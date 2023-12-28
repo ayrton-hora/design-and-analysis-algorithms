@@ -3,14 +3,14 @@
 #include <stdbool.h>
 #include <math.h>
 
-typedef struct IntTuple {
-    int a;
-    int b;
-} IntTuple;
+typedef struct Element {
+    int value;
+    int pos;
+} Element;
 
 void * johnsonTrotter(int n);
 int stepForwardFactorial(int n);
-IntTuple findMobiles(int * permutation, int elements, char * arrows);
+Element largestMobile(int * permutation, int elements, char * arrows);
 
 int main() {
     int n = 0;
@@ -38,50 +38,60 @@ int stepForwardFactorial(int n) {
     return fact;
 }
 
-IntTuple findMobiles(int * permutation, int elements, char * arrows) {
-    // Find smallest number
-    int smallestElement = __INT_MAX__;
-    int smallestElementPos = -1;
+Element largestMobile(int * permutation, int elements, char * arrows) {
+    // Identify all permutation mobiles
+    int m = 0;
+    Element mobiles[elements];
     for (int i = 0; i < elements; i++) {
-        if (permutation[i] < smallestElement) {
-            smallestElement = permutation[i];
-            smallestElementPos = i;
-        }
-    }
-    
-    // Find largest mobile
-    int largestMobile = -1;
-    int largestMobilePos = -1;
-    for (int i = 0; i < elements; i++) {
-        // Mobile condition trigger
-        if (permutation[i] > smallestElement && i > smallestElementPos && arrows[i] == 'L') {
-            // Check if it's larger than current
-            if (permutation[i] > largestMobile) {
-                largestMobile = permutation[i];
-                largestMobilePos = i;
+        // Border elements first check condition
+        if (!(i == 0 && arrows[i] == 'L') && !((i == elements - 1) && arrows[i] == 'R')) {
+            // First element
+            if ((i == 0) && (permutation[i] > permutation[i + 1])) {
+                Element mobile = { permutation[i], i };
+                mobiles[m] = mobile;
+                m++;
+                continue;
             }
-        }
-        
-        // Mobile condition trigger
-        else if (permutation[i] > smallestElement && i < smallestElementPos && arrows[i] == 'R') {
-            // Check if it's larger than current
-            if (permutation[i] > largestMobile) {
-                largestMobile = permutation[i];
-                largestMobilePos = i;
+            // Last element
+            else if ((i == elements - 1) && (permutation[i] > permutation[i - 1])) {
+                Element mobile = { permutation[i], i };
+                mobiles[m] = mobile;
+                m++;
+                continue;
+            }
+            // Middle element pointing to left
+            else if ((arrows[i] == 'L') && (permutation[i] > permutation[i - 1])) {
+                Element mobile = { permutation[i], i };
+                mobiles[m] = mobile;
+                m++;
+                continue;
+            }
+            // Middle element pointing to right
+            else if ((arrows[i] == 'R') && (permutation[i] > permutation[i + 1])) {
+                Element mobile = { permutation[i], i };
+                mobiles[m] = mobile;
+                m++;
+                continue;
             }
         }
     }
 
-    IntTuple largestMobileValues = { largestMobile, largestMobilePos };
-
-    return largestMobileValues;
+    // Find the largest mobile of group
+    Element largestMobile = { -1, -1 };
+    for (int i = 0; i < m; i++) {
+        if (mobiles[i].value > largestMobile.value) {
+            largestMobile.value = mobiles[i].value;
+            largestMobile.pos = mobiles[i].pos;
+        }
+    }
+    return largestMobile;
 }
 
 void * johnsonTrotter(int n) {
     char arrows[n];
-    int permutationNumber = 1;
+    int permutationCounter = 1;
     int permutation[n];
-    int answersNumber = stepForwardFactorial(n);
+    int permutationsNumber = stepForwardFactorial(n);
     
     // Initialize the first permutation with 1..n and numbers with Left Arrow ('L')
     for (int i = 0; i < n; i++) {
@@ -90,15 +100,14 @@ void * johnsonTrotter(int n) {
     }
 
     printf("Permutations:\n");
-    while (permutationNumber <= answersNumber) {
-        for (int i = 0; i < n - 1; i++) 
-            printf("%d ", permutation[i]);
+    while (permutationCounter <= permutationsNumber) {
+        for (int i = 0; i < n - 1; i++) printf("%d ", permutation[i]);
         printf("%d\n", permutation[n - 1]);
 
         // Get largest mobile info
-        IntTuple largestMobileValues = findMobiles(permutation, n, arrows);
-        int largestMobile = largestMobileValues.a;
-        int largestMobilePos = largestMobileValues.b;
+        Element largestMobileElement = largestMobile(permutation, n, arrows);
+        int largestMobile = largestMobileElement.value;
+        int largestMobilePos = largestMobileElement.pos;
 
         // Check if the permutation hasn't a mobile element
         if (largestMobile == -1) 
@@ -113,7 +122,7 @@ void * johnsonTrotter(int n) {
             permutation[largestMobilePos - 1] = largestMobile;
             arrows[largestMobilePos - 1] = switchPos;
         }
-
+        // SwitchPos == 'R'
         else {
             permutation[largestMobilePos] = permutation[largestMobilePos + 1];
             arrows[largestMobilePos] = arrows[largestMobilePos + 1];
@@ -128,10 +137,10 @@ void * johnsonTrotter(int n) {
                 arrows[i] = (arrows[i] == 'L' ? 'R' : 'L');
 
         // Increase the permutations counter
-        permutationNumber++;
+        permutationCounter++;
     }
 
-    printf("\nPermutations Number: %d\n\n", answersNumber);
+    printf("\nTotal: %d\n\n", permutationsNumber);
 
     return NULL;
 }
