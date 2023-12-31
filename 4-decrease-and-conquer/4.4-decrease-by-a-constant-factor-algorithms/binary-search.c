@@ -32,14 +32,11 @@ int binarySearch(int * A, int size, int key) {
     while (left <= right) {
         middle = (int) floor(left + right) / 2;
 
-        if (key == A[middle])
-            return middle;
+        if (key == A[middle]) return middle;
 
-        else if (key < A[middle])
-            right = middle - 1;
+        else if (key < A[middle]) right = middle - 1;
         
-        else
-            left = middle + 1;
+        else left = middle + 1;
     }
 
     return -1;
